@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shieldwise - Insurance Policy Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+
+ <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .step-indicator {
+      position: relative;
+      display: flex;
+      align-items: center;
+      z-index: 1;
+    }
+
+    .step-indicator::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: calc(100% + 12px);
+      width: calc(100% - 24px);
+      height: 3px;
+      background: linear-gradient(90deg, #e5e7eb, #d1d5db);
+      transform: translateY(-50%);
+      border-radius: 2px;
+    }
+
+    .step-indicator.active::after {
+      background: linear-gradient(90deg, #ef4444, #dc2626);
+    }
+
+    .step-indicator:last-child::after {
+      display: none;
+    }
+
+    .step-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      z-index: 2;
+    }
+
+    .step-circle.active {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+      transform: scale(1.1);
+    }
+
+    .step-circle:not(.active) {
+      background: rgba(255, 255, 255, 0.8);
+      color: #6b7280;
+    }
+
+    .slider-container {
+      position: relative;
+      margin: 24px 0;
+    }
+
+    .slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 10px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #e5e7eb, #f3f4f6);
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .slider:hover {
+      background: linear-gradient(90deg, #d1d5db, #e5e7eb);
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .slider::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    .policy-card {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    @media (max-width: 1024px) {
+      #policy-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+    }
+    @media (max-width: 768px) {
+      #policy-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .policy-card {
+        padding: 1.25rem !important;
+        font-size: 1rem;
+      }
+    }
+    @media (max-width: 480px) {
+      .policy-card {
+        padding: 0.75rem !important;
+        font-size: 0.95rem;
+      }
+      .policy-card h3 {
+        font-size: 1.1rem;
+      }
+      .policy-card .text-2xl {
+        font-size: 1.2rem;
+      }
+    }
+
+    .policy-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      transition: left 0.6s ease;
+    }
+
+    .policy-card:hover::before {
+      left: 100%;
+    }
+
+    .policy-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .policy-card.selected {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2), 0 20px 40px rgba(239, 68, 68, 0.2);
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(255, 255, 255, 0.95));
+      transform: translateY(-4px) scale(1.02);
+    }
+
+    .policy-card.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      animation: checkmarkPop 0.3s ease-out;
+    }
+
+    @keyframes checkmarkPop {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .scenario-card {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      border-left: 4px solid transparent;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .scenario-card.animate {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .scenario-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+    }
+
+    .scenario-card[data-severity="low"] {
+      border-left-color: #10b981;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(255, 255, 255, 0.95));
+    }
+
+    .scenario-card[data-severity="medium"] {
+      border-left-color: #f59e0b;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(255, 255, 255, 0.95));
+    }
+
+    .scenario-card[data-severity="high"] {
+      border-left-color: #ef4444;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(255, 255, 255, 0.95));
+    }
+
+    .scenario-card[data-severity="critical"] {
+      border-left-color: #dc2626;
+      background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(255, 255, 255, 0.95));
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ef4444, #dc2626, #ef4444);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 8px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 16px 32px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+    }
+
+    .btn-primary:disabled {
+      background: #d1d5db;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .metric-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .metric-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+    }
+
+    .metric-card.success {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(255, 255, 255, 0.95));
+      border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .metric-card.warning {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(255, 255, 255, 0.95));
+      border-color: rgba(245, 158, 11, 0.2);
+    }
+
+    .metric-card.danger {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(255, 255, 255, 0.95));
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .floating-animation {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .card-shadow {
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+
+    .main-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .input-field {
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 12px 16px;
+      transition: all 0.3s ease;
+      font-size: 16px;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+      background: rgba(255, 255, 255, 1);
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(26px);
+    }
+
+    .icon-wrapper {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border-radius: 16px;
+      padding: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+    }
+
+    @media (max-width: 768px) {
+      .step-indicator {
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .step-indicator::after {
+        display: none;
+      }
+      
+      .step-indicator span {
+        margin-top: 8px;
+        font-size: 14px;
+      }
+    }
+ </style>
+  
+</head>
+
+<body class="py-6 px-4">
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="main-card card-shadow mb-8 floating-animation">
+      <div class="px-8 py-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div class="flex items-center space-x-4">
+            <div class="icon-wrapper">
+              <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-3xl font-bold text-gray-900">Shieldwise</h1>
+              <p class="text-lg text-gray-600">Discover how insurance protects your future</p>
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+            <a href="https://shieldwise.app" target="_blank" rel="noopener" class="block w-full sm:w-auto px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold shadow hover:from-pink-500 hover:to-yellow-400 transition-colors duration-200 text-base text-center" style="word-break:break-all;">
+              🌐 https://shieldwise.app
+            </a>
+            <button id="restart-btn" class="hidden btn-primary w-full sm:w-auto">
+              Start Over
+            </button>
+          </div>
+        </div>
+      </div>
+<style>
+  @media (max-width: 640px) {
+    .main-card .flex.sm\:flex-row {
+      flex-direction: column !important;
+      gap: 1rem !important;
+    }
+    .main-card .flex.flex-col.sm\:flex-row.items-start.sm\:items-center.gap-2.sm\:gap-4 {
+      flex-direction: column !important;
+      gap: 0.5rem !important;
+      width: 100%;
+    }
+    .main-card .flex.flex-col.sm\:flex-row.items-start.sm\:items-center.gap-2.sm\:gap-4 a,
+    .main-card .flex.flex-col.sm\:flex-row.items-start.sm\:items-center.gap-2.sm\:gap-4 button {
+      width: 100%;
+      justify-content: center;
+    }
+    .main-card .flex.items-center.space-x-4 {
+      flex-direction: row !important;
+      gap: 0.75rem !important;
+    }
+  }
+</style>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="main-card card-shadow p-8 mb-8">
+      <div class="flex items-center justify-between mb-8">
+        <div class="step-indicator active" data-step="0">
+          <div class="step-circle active">1</div>
+          <span class="ml-4 font-semibold text-red-600">Profile Setup</span>
+        </div>
+        <div class="step-indicator" data-step="1">
+          <div class="step-circle">2</div>
+          <span class="ml-4 font-semibold text-gray-400">Choose Policy</span>
+        </div>
+        <div class="step-indicator" data-step="2">
+          <div class="step-circle">3</div>
+          <span class="ml-4 font-semibold text-gray-400">Life Simulation</span>
+        </div>
+        <div class="step-indicator" data-step="3">
+          <div class="step-circle">4</div>
+          <span class="ml-4 font-semibold text-gray-400">Results</span>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 25%"></div>
+      </div>
+    </div>
+
+    <!-- Step 1: Profile Setup -->
+    <div id="step-1" class="main-card card-shadow p-8">
+      <div class="text-center mb-12">
+        <div class="relative w-24 h-24 mx-auto mb-6">
+          <div class="absolute inset-0 rounded-full bg-gradient-to-br from-pink-400 via-red-400 to-yellow-300 animate-spin-slow blur-xl opacity-60"></div>
+          <div class="w-24 h-24 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center mx-auto floating-animation relative z-10 shadow-2xl border-4 border-white">
+            <svg class="h-12 w-12 text-white drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+          </div>
+        </div>
+        <h2 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-pink-500 to-yellow-400 mb-2 tracking-tight drop-shadow-lg">Welcome to Shieldwise</h2>
+        <p class="text-xl text-gray-700 font-medium mb-2">Your personalized insurance journey starts here</p>
+        <p class="text-lg text-gray-500">Answer a few quick questions and see how insurance can protect your future.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Age Slider -->
+        <div class="mb-6">
+          <label for="age" class="block mb-3 font-semibold text-gray-700 text-lg">Age</label>
+          <input type="range" id="age" min="18" max="80" value="30" class="slider" />
+          <div class="text-red-600 mt-3 text-lg font-semibold">Age: <span id="age-display">30</span></div>
+        </div>
+
+        <!-- Income Slider -->
+        <div class="mb-6">
+          <label for="income" class="block mb-3 font-semibold text-gray-700 text-lg">Annual Income</label>
+          <input type="range" id="income" min="20000" max="200000" step="5000" value="50000" class="slider" />
+          <div class="text-green-600 mt-3 text-lg font-semibold">Income: <span id="income-display">$50,000</span></div>
+        </div>
+
+        <!-- Health Status -->
+                <div class="mb-6">
+          <label class="block text-lg font-semibold mb-3 text-gray-700">Health Status</label>
+          <select id="health" class="input-field w-full">
+            <option value="excellent">🌟 Excellent - Regular exercise, healthy diet</option>
+            <option value="good" selected>✅ Good - Generally healthy</option>
+            <option value="fair">⚠️ Fair - Some health concerns</option>
+            <option value="poor">🚨 Poor - Multiple health issues</option>
+          </select>
+        </div>
+
+
+        <!-- Family Size -->
+        <div class="mb-6">
+          <label class="block text-lg font-semibold mb-3 text-gray-700">Family Size</label>
+          <div class="slider-container">
+            <input type="range" id="family-size" class="slider" min="1" max="8" value="1">
+            <div class="text-center mt-3">
+              <span class="text-2xl font-bold text-purple-600" id="family-size-display">1</span>
+              <span class="text-gray-600 ml-2 text-lg">person</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Children Toggle -->
+        <div class="mb-6">
+          <label class="block text-lg font-semibold mb-3 text-gray-700">Has Children</label>
+          <div class="flex items-center">
+            <label class="toggle-switch">
+              <input type="checkbox" id="has-children">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="ml-4 text-gray-700 text-lg" id="children-text">No children</span>
+          </div>
+        </div>
+
+        <!-- Occupation -->
+        <div class="mb-6">
+          <label class="block text-lg font-semibold mb-3 text-gray-700">Occupation</label>
+          <select id="occupation" class="input-field w-full">
+            <option value="">Select your occupation</option>
+            <option value="Software Engineer">Software Engineer</option>
+            <option value="Teacher">Teacher</option>
+            <option value="Healthcare Worker">Healthcare Worker</option>
+            <option value="Construction Worker">Construction Worker</option>
+            <option value="Office Worker">Office Worker</option>
+            <option value="Sales Representative">Sales Representative</option>
+            <option value="Manager">Manager</option>
+            <option value="Freelancer">Freelancer</option>
+            <option value="Student">Student</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <!-- Lifestyle Factors -->
+        <div class="mb-6">
+          <label class="block text-lg font-semibold mb-3 text-gray-700">🚬 Smoking</label>
+          <select id="smoking" class="input-field w-full">
+            <option value="none">No smoking</option>
+            <option value="occasional">Occasional smoker</option>
+            <option value="regular">Regular smoker</option>
+          </select>
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-lg font-semibold mb-3 text-gray-700">🍺 Drinking</label>
+          <select id="drinking" class="input-field w-full">
+            <option value="none">No drinking</option>
+            <option value="social">Social drinker</option>
+            <option value="regular">Regular drinker</option>
+          </select>
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-lg font-semibold mb-3 text-gray-700">💊 Drugs</label>
+          <select id="drugs" class="input-field w-full">
+            <option value="none">No drug use</option>
+            <option value="past">Past drug use</option>
+            <option value="current">Current drug use</option>
+          </select>
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-lg font-semibold mb-3 text-gray-700">♿ Handicap</label>
+          <select id="handicap" class="input-field w-full">
+            <option value="none">No handicap</option>
+            <option value="mild">Mild disability</option>
+            <option value="severe">Severe disability</option>
+          </select>
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-lg font-semibold mb-3 text-gray-700">🩹 Past Injuries</label>
+          <select id="past-injuries" class="input-field w-full">
+            <option value="none">No major injuries</option>
+            <option value="minor">Minor injuries</option>
+            <option value="major">Major injuries/surgeries</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Emergency Savings -->
+      <div class="mt-8 mb-8">
+        <label class="block text-lg font-semibold mb-3 text-gray-700">Emergency Savings</label>
+        <div class="slider-container">
+          <input type="range" id="savings" class="slider" min="0" max="100000" value="10000" step="1000">
+          <div class="text-center mt-3">
+            <span class="text-2xl font-bold text-orange-600" id="savings-display">$10,000</span>
+            <span class="text-gray-600 ml-2 text-lg">saved</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Continue Button -->
+      <div class="mt-8 text-center">
+        <button id="continue-to-policy" class="btn-primary">
+          Continue to Insurance Selection →
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Policy Selection -->
+    <div id="step-2" class="hidden main-card card-shadow p-8">
+      <h2 class="text-3xl font-bold mb-8 text-center">Choose Your Insurance Policy</h2>
+  <div id="policy-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mb-8">
+        <!-- Policies will be generated dynamically -->
+      </div>
+      <div class="text-center">
+        <button id="continue-to-simulation" class="btn-primary" disabled>
+          Start Life Simulation →
+        </button>
+      </div>
+    </div>
+
+     <!-- Step 3: Enhanced Life Simulation -->
+    <div id="step-3" class="hidden main-card p-8">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold mb-4">🎬 Your Life Story Simulation</h2>
+        <p class="text-xl text-gray-600">Watch how your chosen plan handles real-life medical scenarios over 5 years</p>
+      </div>
+      
+      <div class="mb-6 p-4 bg-red-50 rounded-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-semibold">Selected Plan: <span id="selected-plan-name">-</span></h3>
+            <p class="text-sm text-gray-600">Annual Premium: <span id="selected-plan-premium">-</span></p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm">Simulation Years: <span class="font-bold">2025-2029</span></p>
+            <p class="text-sm">Based on: Your risk profile</p>
+          </div>
+        </div>
+      </div>
+      
+      <div id="simulation-progress" class="space-y-6">
+        <!-- Simulation scenarios will appear here -->
+      </div>
+      
+      <div class="text-center">
+        <button id="view-results" class="hidden btn-primary">
+          View Predictive Analysis →
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 4: Predictive Insights -->
+    <div id="step-4" class="hidden main-card p-8">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold mb-4">📊 Your Insurance Impact Report</h2>
+        <p class="text-lg text-gray-600">AI-powered insights and future predictions</p>
+      </div>
+      
+  <!-- Key Metrics -->
+      <div class="grid md:grid-cols-4 gap-6 mb-8">
+        <div class="metric-card success">
+          <h3 class="font-semibold text-green-800 text-lg">💰 Money Saved</h3>
+          <p class="text-3xl font-bold text-green-600" id="total-savings">$0</p>
+          <p class="text-sm text-green-700">vs no insurance</p>
+        </div>
+        <div class="metric-card danger">
+          <h3 class="font-semibold text-red-800 text-lg">💸 Out of Pocket</h3>
+          <p class="text-3xl font-bold text-red-600" id="total-out-of-pocket">$0</p>
+          <p class="text-sm text-red-700">over 5 years</p>
+        </div>
+        <div class="metric-card">
+          <h3 class="font-semibold text-blue-800 text-lg">🛡️ Protection Level</h3>
+          <p class="text-3xl font-bold text-blue-600" id="protection-level">85%</p>
+          <p class="text-sm text-blue-700">coverage rate</p>
+        </div>
+        <div class="metric-card warning">
+          <h3 class="font-semibold text-purple-800 text-lg">📈 Risk Score</h3>
+          <p class="text-3xl font-bold text-purple-600" id="overall-risk">Medium</p>
+          <p class="text-sm text-purple-700">next 10 years</p>
+        </div>
+      </div>
+
+   <!-- Financial Impact Chart -->
+      <div class="mb-8">
+        <h3 class="text-2xl font-semibold mb-6 text-center">Financial Impact Breakdown</h3>
+        <div class="bg-white rounded-2xl p-6" style="box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+          <canvas id="financial-chart" width="400" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Detailed Results -->
+      <div class="mb-8">
+        <h3 class="text-2xl font-semibold mb-6">Scenario Breakdown</h3>
+        <div id="detailed-results" class="space-y-4">
+          <!-- Detailed scenario results will be populated here -->
+        </div>
+      </div>
+
+      <!-- Recommendations -->
+      <div class="bg-gradient-to-br from-red-50 to-pink-50 p-8 rounded-2xl card-shadow">
+        <h3 class="text-2xl font-semibold text-red-800 mb-6">Recommendations</h3>
+        <div id="recommendations" class="text-red-700 text-lg">
+          <!-- Recommendations will be populated here -->
+        </div>
+      </div>
+
+      <div class="text-center mt-8">
+        <button id="restart-simulation" class="btn-primary">
+          Start New Simulation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let plans = []; 
+let costs = {};
+
+const state = {
+  currentStep: 0,
+  userProfile: {
+    age: 30,
+    income: 50000,
+    healthStatus: 'good',
+    familySize: 1,
+    hasChildren: false,
+    occupation: '',
+    savings: 10000,
+    smoking: 'none',
+    drinking: 'none',
+    drugs: 'none',
+    handicap: 'none',
+    pastInjuries: 'none'
+  },
+  selectedPolicy: null,
+  simulationResults: null
+};
+
+const lifeScenarios = [
+  {
+    id: 'routine_checkup',
+    title: 'Annual Health Checkup',
+    description: 'Regular preventive screening at a public clinic.',
+    baseCost: 600,
+    severity: 'low',
+    probability: 0.9,
+    icon: '🩺'
+  },
+  {
+    id: 'minor_surgery',
+    title: 'Minor Surgery',
+    description: 'Day surgery for a small medical issue.',
+    baseCost: 2500,
+    severity: 'medium',
+    probability: 0.4,
+    icon: '🔪'
+  },
+  {
+    id: 'emergency_visit',
+    title: 'Emergency Hospital Visit',
+    description: 'Sudden accident requiring treatment.',
+    baseCost: 8000,
+    severity: 'high',
+    probability: 0.3,
+    icon: '🚨'
+  },
+  {
+    id: 'major_surgery',
+    title: 'Major Surgery',
+    description: 'Hospitalisation for 5 days post-operation.',
+    baseCost: 20000,
+    severity: 'high',
+    probability: 0.2,
+    icon: '🏥'
+  },
+  {
+    id: 'chronic_illness',
+    title: 'Chronic Illness Management',
+    description: 'Ongoing medication for hypertension or diabetes.',
+    baseCost: 4200,
+    severity: 'medium',
+    probability: 0.2,
+    icon: '💊'
+  },
+  {
+    id: 'critical_illness',
+    title: 'Critical Illness Diagnosis',
+    description: 'Major disease requiring long-term care.',
+    baseCost: 80000,
+    severity: 'critical',
+    probability: 0.05,
+    icon: '🧬'
+  },
+  {
+    id: 'dengue',
+    title: 'Dengue Hospitalisation',
+    description: 'Hospital stay due to dengue fever.',
+    baseCost: 4000,
+    severity: 'medium',
+    probability: 0.1,
+    icon: '🦟'
+  },
+  {
+    id: 'maternity',
+    title: 'Maternity Care',
+    description: 'Childbirth in private hospital.',
+    baseCost: 12000,
+    severity: 'high',
+    probability: 0.15,
+    icon: '🤰'
+  },
+  {
+    id: 'cancer',
+    title: 'Cancer Treatment',
+    description: 'Long-term cancer treatment and care.',
+    baseCost: 100000,
+    severity: 'critical',
+    probability: 0.03,
+    icon: '🧬'
+  }
+];
+
+function setupSliders() {
+  const ageSlider = document.getElementById('age');
+  const ageDisplay = document.getElementById('age-display');
+  ageSlider.addEventListener('input', () => {
+    ageDisplay.textContent = ageSlider.value;
+    state.userProfile.age = parseInt(ageSlider.value);
+  });
+
+  const incomeSlider = document.getElementById('income');
+  const incomeDisplay = document.getElementById('income-display');
+  incomeSlider.addEventListener('input', () => {
+    incomeDisplay.textContent = `$${parseInt(incomeSlider.value).toLocaleString()}`;
+    state.userProfile.income = parseInt(incomeSlider.value);
+  });
+
+  const familySlider = document.getElementById('family-size');
+  const familyDisplay = document.getElementById('family-size-display');
+  familySlider.addEventListener('input', () => {
+    familyDisplay.textContent = familySlider.value;
+    state.userProfile.familySize = parseInt(familySlider.value);
+  });
+
+  const savingsSlider = document.getElementById('savings');
+  const savingsDisplay = document.getElementById('savings-display');
+  savingsSlider.addEventListener('input', () => {
+    savingsDisplay.textContent = `$${parseInt(savingsSlider.value).toLocaleString()}`;
+    state.userProfile.savings = parseInt(savingsSlider.value);
+  });
+
+  const healthSelect = document.getElementById('health');
+  healthSelect.addEventListener('change', () => {
+    state.userProfile.healthStatus = healthSelect.value;
+  });
+
+  const childrenToggle = document.getElementById('has-children');
+  const childrenText = document.getElementById('children-text');
+  childrenToggle.addEventListener('change', () => {
+    state.userProfile.hasChildren = childrenToggle.checked;
+    childrenText.textContent = childrenToggle.checked ? 'Has children' : 'No children';
+  });
+
+  const occupationSelect = document.getElementById('occupation');
+  occupationSelect.addEventListener('change', () => {
+    state.userProfile.occupation = occupationSelect.value;
+  });
+
+  // Lifestyle factors
+  document.getElementById('smoking').addEventListener('change', function() {
+    state.userProfile.smoking = this.value;
+  });
+  document.getElementById('drinking').addEventListener('change', function() {
+    state.userProfile.drinking = this.value;
+  });
+  document.getElementById('drugs').addEventListener('change', function() {
+    state.userProfile.drugs = this.value;
+  });
+  document.getElementById('handicap').addEventListener('change', function() {
+    state.userProfile.handicap = this.value;
+  });
+  document.getElementById('past-injuries').addEventListener('change', function() {
+    state.userProfile.pastInjuries = this.value;
+  });
+}
+
+function calculateRiskMultiplier() {
+  let multiplier = 1;
+  
+  // Age-based risk
+  if (state.userProfile.age >= 18 && state.userProfile.age <= 30) {
+    multiplier *= 0.8;
+  } else if (state.userProfile.age >= 31 && state.userProfile.age <= 40) {
+    multiplier *= 1.0;
+  } else if (state.userProfile.age >= 41 && state.userProfile.age <= 50) {
+    multiplier *= 1.2;
+  } else if (state.userProfile.age >= 51 && state.userProfile.age <= 60) {
+    multiplier *= 1.5;
+  } else if (state.userProfile.age >= 61 && state.userProfile.age <= 70) {
+    multiplier *= 2.0;
+  } else if (state.userProfile.age > 70) {
+    multiplier *= 3.0;
+  }
+  
+  // Health status
+  switch(state.userProfile.healthStatus) {
+    case 'excellent': multiplier *= 0.8; break;
+    case 'good': multiplier *= 1.0; break;
+    case 'fair': multiplier *= 1.3; break;
+    case 'poor': multiplier *= 1.8; break;
+  }
+  
+  // Lifestyle factors
+  if (state.userProfile.smoking === 'occasional') multiplier *= 1.2;
+  if (state.userProfile.smoking === 'regular') multiplier *= 1.5;
+  
+  if (state.userProfile.drinking === 'social') multiplier *= 1.1;
+  if (state.userProfile.drinking === 'regular') multiplier *= 1.3;
+  
+  if (state.userProfile.drugs === 'past') multiplier *= 1.3;
+  if (state.userProfile.drugs === 'current') multiplier *= 1.8;
+  
+  if (state.userProfile.handicap === 'mild') multiplier *= 1.2;
+  if (state.userProfile.handicap === 'severe') multiplier *= 1.6;
+  
+  if (state.userProfile.pastInjuries === 'minor') multiplier *= 1.1;
+  if (state.userProfile.pastInjuries === 'major') multiplier *= 1.4;
+  
+  // Occupation risk
+  if (state.userProfile.occupation === 'Construction Worker') multiplier *= 1.6;
+  if (state.userProfile.occupation === 'Healthcare Worker') multiplier *= 1.2;
+  
+  return multiplier;
+}
+
+function generatePolicies() {
+ const riskMultiplier = calculateRiskMultiplier();
+
+  plans = [
+    {
+      id: 'aia',
+      name: 'AIA HealthShield Gold Max',
+      description: 'Comprehensive pre/post hospitalisation cover, high annual limits',
+      premium: Math.round(450 * riskMultiplier),
+      coverage: 0.90,
+      deductible: 2000,
+      maxCoverage: 2000000,
+      features: ['Up to $2m coverage', 'Pre/post hospitalisation', 'ICU', 'Psychiatric', 'Emergency overseas']
+    },
+    {
+      id: 'singlife',
+      name: 'Singlife Shield',
+      description: 'Value starter plan, strong hospital options',
+      premium: Math.round(350 * riskMultiplier),
+      coverage: 0.85,
+      deductible: 2200,
+      maxCoverage: 1000000,
+      features: ['Up to $1m coverage', 'Panel hospitals', 'Affordable premiums']
+    },
+    {
+      id: 'hsbc',
+      name: 'HSBC Life Shield',
+      description: 'High annual limits, private hospital panel',
+      premium: Math.round(480 * riskMultiplier),
+      coverage: 0.88,
+      deductible: 1800,
+      maxCoverage: 2500000,
+      features: ['Up to $2.5m coverage', 'Private hospital access', 'Extensive procedures']
+    },
+    {
+      id: 'ntuc',
+      name: 'NTUC IncomeShield',
+      description: 'Strong panel benefits, good reviews',
+      premium: Math.round(400 * riskMultiplier),
+      coverage: 0.92,
+      deductible: 1500,
+      maxCoverage: 1500000,
+      features: ['Up to $1.5m coverage', 'Panel hospitals', 'Pre/post hospitalisation']
+    },
+    {
+      id: 'pru',
+      name: 'Prudential PRUShield',
+      description: 'Overseas and psychiatric cover',
+      premium: Math.round(430 * riskMultiplier),
+      coverage: 0.89,
+      deductible: 1700,
+      maxCoverage: 1200000,
+      features: ['Up to $1.2m+ coverage', 'Psychiatric treatment', 'Overseas care']
+    },
+    {
+      id: 'raffles',
+      name: 'Raffles Shield',
+      description: 'Private hospital options at moderate premiums',
+      premium: Math.round(380 * riskMultiplier),
+      coverage: 0.86,
+      deductible: 2000,
+      maxCoverage: 1500000,
+      features: ['Up to $1.5m coverage', 'Private/public specialty care']
+    }
+  ];
+
+  
+  const policyGrid = document.getElementById('policy-grid');
+  policyGrid.innerHTML = '';
+  
+  plans.forEach(plan => {
+    const policyCard = document.createElement('div');
+    policyCard.className = 'policy-card p-6';
+    policyCard.dataset.id = plan.id;
+    
+    policyCard.innerHTML = `
+      <h3 class="text-xl font-bold mb-2">${plan.name}</h3>
+      <p class="text-gray-600 mb-4">${plan.description}</p>
+      <div class="text-2xl font-bold text-red-600 mb-4">$${plan.premium}/year</div>
+      <div class="mb-4">
+        <div class="flex justify-between mb-1">
+          <span>Coverage</span>
+          <span>${plan.coverage * 100}%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="bg-red-600 h-2 rounded-full" style="width: ${plan.coverage * 100}%"></div>
+        </div>
+      </div>
+      <div class="mb-4">
+        <div class="flex justify-between mb-1">
+          <span>Deductible</span>
+          <span>$${plan.deductible}</span>
+        </div>
+      </div>
+      <ul class="mb-4 space-y-2">
+        ${plan.features.map(feature => `<li class="flex items-center">
+          <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          ${feature}
+        </li>`).join('')}
+      </ul>
+      <button class="select-policy-btn w-full py-2 px-4 bg-gray-100 text-gray-800 rounded-lg font-semibold">
+        Select Plan
+      </button>
+    `;
+    
+    policyGrid.appendChild(policyCard);
+    
+    const selectBtn = policyCard.querySelector('.select-policy-btn');
+    selectBtn.addEventListener('click', () => {
+      document.querySelectorAll('.policy-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      policyCard.classList.add('selected');
+      state.selectedPolicy = plan;
+      document.getElementById('continue-to-simulation').disabled = false;
+    });
+  });
+}
+
+function runSimulation() {
+  const selectedPlan = state.selectedPolicy;
+  const riskMultiplier = calculateRiskMultiplier();
+  const simulationContainer = document.getElementById('simulation-progress');
+  simulationContainer.innerHTML = '';
+  
+  let totalOutOfPocket = 0;
+  let totalCovered = 0;
+  let scenarios = [];
+  
+  // Generate 5 years of scenarios
+  for (let year = 1; year <= 5; year++) {
+    const yearScenarios = [];
+    
+    // Determine which scenarios happen this year based on probability
+    lifeScenarios.forEach(scenario => {
+      const adjustedProbability = scenario.probability * riskMultiplier;
+      if (Math.random() < adjustedProbability) {
+        yearScenarios.push({...scenario});
+      }
+    });
+    
+    // If no scenarios happened this year, add a routine checkup
+    if (yearScenarios.length === 0) {
+      yearScenarios.push({...lifeScenarios[0]});
+    }
+    
+    scenarios.push({year, events: yearScenarios});
+  }
+  
+  // Display simulation with animations
+  let delay = 0;
+  scenarios.forEach(yearData => {
+    const yearElement = document.createElement('div');
+    yearElement.className = 'scenario-card p-6';
+    yearElement.dataset.year = yearData.year;
+    yearElement.style.transitionDelay = `${delay}ms`;
+    
+    let yearOutOfPocket = 0;
+    let yearCovered = 0;
+    let yearEventsHTML = '';
+    
+    yearData.events.forEach(event => {
+      // Adjust cost based on risk multiplier
+      const eventCost = event.baseCost * riskMultiplier;
+      let coveredAmount = 0;
+      let outOfPocket = 0;
+      
+      // Apply insurance coverage
+      if (eventCost > selectedPlan.deductible) {
+        const covered = (eventCost - selectedPlan.deductible) * selectedPlan.coverage;
+        coveredAmount = Math.min(covered, selectedPlan.maxCoverage);
+        outOfPocket = eventCost - coveredAmount;
+      } else {
+        outOfPocket = eventCost;
+      }
+      
+      totalOutOfPocket += outOfPocket;
+      totalCovered += coveredAmount;
+      yearOutOfPocket += outOfPocket;
+      yearCovered += coveredAmount;
+      
+      yearEventsHTML += `
+        <div class="mb-4 p-4 rounded-lg ${getSeverityClass(event.severity)}">
+          <div class="flex items-center mb-2">
+            <span class="text-2xl mr-3">${event.icon}</span>
+            <h4 class="font-semibold">${event.title}</h4>
+          </div>
+          <p class="text-gray-700 mb-2">${event.description}</p>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div>Cost: <span class="font-semibold">$${Math.round(eventCost).toLocaleString()}</span></div>
+            <div>You pay: <span class="font-semibold">$${Math.round(outOfPocket).toLocaleString()}</span></div>
+          </div>
+        </div>
+      `;
+    });
+    
+    yearElement.innerHTML = `
+      <h3 class="text-xl font-bold mb-4 flex items-center">
+        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full mr-3">Year ${yearData.year}</span>
+        <span>Financial Summary</span>
+      </h3>
+      ${yearEventsHTML}
+      <div class="grid grid-cols-2 gap-4 mt-4">
+        <div class="bg-red-50 p-3 rounded-lg">
+          <div class="text-sm text-red-700">Out of Pocket</div>
+          <div class="text-xl font-bold text-red-800">$${Math.round(yearOutOfPocket).toLocaleString()}</div>
+        </div>
+        <div class="bg-green-50 p-3 rounded-lg">
+          <div class="text-sm text-green-700">Insurance Covered</div>
+          <div class="text-xl font-bold text-green-800">$${Math.round(yearCovered).toLocaleString()}</div>
+        </div>
+      </div>
+    `;
+    
+    simulationContainer.appendChild(yearElement);
+    
+    // Animate in
+    setTimeout(() => {
+      yearElement.classList.add('animate');
+    }, delay);
+    
+    delay += 800;
+  });
+  
+  // Store results for the results page
+  state.simulationResults = {
+    totalOutOfPocket,
+    totalCovered,
+    totalWithoutInsurance: totalOutOfPocket + totalCovered,
+    scenarios
+  };
+  
+  // Show view results button after simulation completes
+  setTimeout(() => {
+    document.getElementById('view-results').classList.remove('hidden');
+  }, delay + 1000);
+}
+
+function getSeverityClass(severity) {
+  switch(severity) {
+    case 'low': return 'bg-green-50 border-l-4 border-green-500';
+    case 'medium': return 'bg-yellow-50 border-l-4 border-yellow-500';
+    case 'high': return 'bg-orange-50 border-l-4 border-orange-500';
+    case 'critical': return 'bg-red-50 border-l-4 border-red-500';
+    default: return 'bg-gray-50 border-l-4 border-gray-500';
+  }
+}
+
+function showResults() {
+  const results = state.simulationResults;
+  
+  // Update metrics
+  document.getElementById('total-savings').textContent = `$${Math.round(results.totalWithoutInsurance - results.totalOutOfPocket).toLocaleString()}`;
+  document.getElementById('total-out-of-pocket').textContent = `$${Math.round(results.totalOutOfPocket).toLocaleString()}`;
+  
+  const protectionLevel = Math.round((results.totalCovered / results.totalWithoutInsurance) * 100);
+  document.getElementById('protection-level').textContent = `${protectionLevel}%`;
+  
+  // Calculate overall risk
+  const riskMultiplier = calculateRiskMultiplier();
+  let riskLevel = 'Low';
+  if (riskMultiplier > 1.5) riskLevel = 'High';
+  else if (riskMultiplier > 1.2) riskLevel = 'Medium-High';
+  else if (riskMultiplier > 1.0) riskLevel = 'Medium';
+  document.getElementById('overall-risk').textContent = riskLevel;
+  
+  // Generate recommendations
+  const recommendations = document.getElementById('recommendations');
+  let recommendationHTML = '';
+  const { age, savings, hasChildren, occupation, healthStatus, smoking, drinking, drugs, handicap, pastInjuries, income } = state.userProfile;
+  
+  if (results.totalOutOfPocket > savings) {
+    recommendationHTML += `<p class="mb-4">⚠️ <b>Emergency Savings Alert:</b> Your potential out-of-pocket costs ($${Math.round(results.totalOutOfPocket).toLocaleString()}) exceed your emergency savings ($${Math.round(savings).toLocaleString()}). Consider increasing your coverage, building a larger emergency fund, or reducing discretionary spending to improve your financial buffer.</p>`;
+  }
+  if (riskMultiplier > 1.5) {
+    recommendationHTML += `<p class="mb-4">🛡️ <b>High Risk Profile:</b> Due to your higher risk profile (age, health, or lifestyle), we recommend maintaining comprehensive coverage. Consider plans with higher annual limits and lower deductibles. Review your lifestyle choices (e.g., smoking, drinking) to reduce future premiums.</p>`;
+  }
+  if (age > 50) {
+    recommendationHTML += `<p class="mb-4">👵 <b>Retirement Planning:</b> As you approach retirement age, consider long-term care insurance and critical illness coverage. Review your policy for post-retirement benefits and ensure your savings can cover non-insured expenses.</p>`;
+  }
+  if (hasChildren) {
+    recommendationHTML += `<p class="mb-4">👨‍👩‍👧‍👦 <b>Family Protection:</b> Since you have children, ensure your policy includes pediatric coverage and consider life insurance to protect their future. Review education and child care riders for added security.</p>`;
+  }
+  if (occupation === 'Construction Worker' || occupation === 'Healthcare Worker') {
+    recommendationHTML += `<p class="mb-4">🏥 <b>Occupation Risk:</b> Your occupation may expose you to higher health risks. Consider policies with strong accident and hospitalization benefits. Check for workplace insurance and supplement if needed.</p>`;
+  }
+  if (healthStatus === 'fair' || healthStatus === 'poor') {
+    recommendationHTML += `<p class="mb-4">💊 <b>Health Status:</b> With a health status of "${healthStatus}", prioritize plans with lower deductibles and broader coverage. Schedule regular checkups and preventive care to manage risks.</p>`;
+  }
+  if (smoking !== 'none' || drinking === 'regular' || drugs !== 'none') {
+    recommendationHTML += `<p class="mb-4">🚬 <b>Lifestyle Factors:</b> Smoking, regular drinking, or drug use can increase your premiums and risk. Consider wellness programs and seek support to reduce these habits for better rates and health.</p>`;
+  }
+  if (handicap !== 'none' || pastInjuries !== 'none') {
+    recommendationHTML += `<p class="mb-4">♿ <b>Special Needs:</b> If you have a disability or past major injuries, review your policy for rehabilitation and long-term care benefits. Consider additional riders for disability income protection.</p>`;
+  }
+  if (income < 40000) {
+    recommendationHTML += `<p class="mb-4">💸 <b>Income Consideration:</b> With a lower income, balance premium costs with essential coverage. Consider government subsidies or basic plans to avoid being underinsured.</p>`;
+  }
+  if (!recommendationHTML) {
+    recommendationHTML = `<p class="mb-4">✅ <b>Great Choice:</b> Your current insurance selection is well-suited to your risk profile and financial situation. Review your policy annually to keep up with life changes.</p>`;
+  }
+  recommendations.innerHTML = recommendationHTML;
+  
+  // Render financial chart
+  renderFinancialChart(results);
+  
+  // Show detailed results
+  const detailedResults = document.getElementById('detailed-results');
+  detailedResults.innerHTML = `
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h4 class="font-semibold mb-2">Total Medical Costs</h4>
+        <p class="text-2xl font-bold text-purple-600">$${Math.round(results.totalWithoutInsurance).toLocaleString()}</p>
+      </div>
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h4 class="font-semibold mb-2">Insurance Coverage</h4>
+        <p class="text-2xl font-bold text-green-600">$${Math.round(results.totalCovered).toLocaleString()}</p>
+      </div>
+      <div class="bg-white p-4 rounded-lg shadow">
+        <h4 class="font-semibold mb-2">Your Share</h4>
+        <p class="text-2xl font-bold text-red-600">$${Math.round(results.totalOutOfPocket).toLocaleString()}</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderFinancialChart(results) {
+  const ctx = document.getElementById('financial-chart').getContext('2d');
+  
+  // Destroy previous chart if it exists
+  if (window.financialChart) {
+    window.financialChart.destroy();
+  }
+  
+  window.financialChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Without Insurance', 'With Insurance'],
+      datasets: [{
+        label: 'Your Costs',
+        data: [results.totalWithoutInsurance, results.totalOutOfPocket],
+        backgroundColor: [
+          'rgba(239, 68, 68, 0.7)',
+          'rgba(34, 197, 94, 0.7)'
+        ],
+        borderColor: [
+          'rgb(239, 68, 68)',
+          'rgb(34, 197, 94)'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Insurance Impact Over 5 Years',
+          font: {
+            size: 16
+          }
+        },
+        legend: {
+          position: 'top',
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Cost (SGD)'
+          }
+        }
+      }
+    }
+  });
+}
+
+function goToStep(step) {
+  // Hide all steps
+  document.querySelectorAll('[id^="step-"]').forEach(el => {
+    el.classList.add('hidden');
+  });
+  
+  // Show current step
+  document.getElementById(`step-${step + 1}`).classList.remove('hidden');
+  
+  // Update progress bar
+  document.getElementById('progress-fill').style.width = `${(step + 1) * 25}%`;
+  
+  // Update step indicators
+  document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+    if (index <= step) {
+      indicator.classList.add('active');
+      indicator.querySelector('.step-circle').classList.add('active');
+      indicator.querySelector('span').classList.remove('text-gray-400');
+      indicator.querySelector('span').classList.add('text-red-600');
+    } else {
+      indicator.classList.remove('active');
+      indicator.querySelector('.step-circle').classList.remove('active');
+      indicator.querySelector('span').classList.add('text-gray-400');
+      indicator.querySelector('span').classList.remove('text-red-600');
+    }
+  });
+  
+  // Special actions for specific steps
+  if (step === 1) {
+    generatePolicies();
+  } else if (step === 2) {
+    document.getElementById('selected-plan-name').textContent = state.selectedPolicy.name;
+    document.getElementById('selected-plan-premium').textContent = `$${state.selectedPolicy.premium}/year`;
+    runSimulation();
+  } else if (step === 3) {
+    showResults();
+  }
+  
+  // Show/hide restart button
+  if (step === 3) {
+    document.getElementById('restart-btn').classList.remove('hidden');
+  } else {
+    document.getElementById('restart-btn').classList.add('hidden');
+  }
+  
+  state.currentStep = step;
+}
+
+function initApp() {
+  setupSliders();
+  
+  // Set up event listeners for navigation
+  document.getElementById('continue-to-policy').addEventListener('click', () => {
+    goToStep(1);
+  });
+  
+  document.getElementById('continue-to-simulation').addEventListener('click', () => {
+    goToStep(2);
+  });
+  
+  document.getElementById('view-results').addEventListener('click', () => {
+    goToStep(3);
+  });
+  
+  document.getElementById('restart-simulation').addEventListener('click', () => {
+    goToStep(0);
+  });
+  
+  document.getElementById('restart-btn').addEventListener('click', () => {
+    goToStep(0);
+  });
+  
+  // Initialize the first step
+  goToStep(0);
+}
+
+// Start the app when the DOM is loaded
+document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
