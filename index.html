@@ -140,6 +140,16 @@
       border: 2px solid rgba(255, 255, 255, 0.2);
       min-width: 0;
       word-break: break-word;
+      width: 340px;
+      max-width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    @media (max-width: 1024px) {
+      .policy-card {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
     }
 
     @media (max-width: 1024px) {
@@ -447,6 +457,30 @@
         font-size: 14px;
       }
     }
+     @media (max-width: 640px) {
+    .main-card .flex.sm\:flex-row {
+      flex-direction: column !important;
+      gap: 1rem !important;
+    }
+    .main-card .flex.items-center.space-x-4 {
+      flex-direction: row !important;
+      gap: 0.75rem !important;
+    }
+    .main-card .btn-primary {
+      width: 100% !important;
+      margin-top: 0.5rem;
+    }
+    .main-card h1.text-3xl {
+      font-size: 2rem !important;
+    }
+    .main-card p.text-lg {
+      font-size: 1rem !important;
+    }
+    .main-card {
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+    }
+  }
  </style>
   
 </head>
@@ -473,33 +507,8 @@
           </button>
         </div>
       </div>
-</style>
-  @media (max-width: 640px) {
-    .main-card .flex.sm\:flex-row {
-      flex-direction: column !important;
-      gap: 1rem !important;
-    }
-    .main-card .flex.items-center.space-x-4 {
-      flex-direction: row !important;
-      gap: 0.75rem !important;
-    }
-    .main-card .btn-primary {
-      width: 100% !important;
-      margin-top: 0.5rem;
-    }
-    .main-card h1.text-3xl {
-      font-size: 2rem !important;
-    }
-    .main-card p.text-lg {
-      font-size: 1rem !important;
-    }
-    .main-card {
-      padding-left: 0.5rem !important;
-      padding-right: 0.5rem !important;
-    }
-  }
     </div>
-
+    
     <!-- Progress Steps -->
     <div class="main-card card-shadow p-8 mb-8">
       <div class="flex items-center justify-between mb-8">
@@ -1017,7 +1026,7 @@ function generatePolicies() {
       coverage: 0.90,
       deductible: 2000,
       maxCoverage: 2000000,
-      features: ['Up to $2m coverage', 'Pre/post hospitalisation', 'ICU', 'Psychiatric', 'Emergency overseas']
+      features: ['Up to $2m coverage', 'Pre/post hospitalisation', 'ICU']
     },
     {
       id: 'singlife',
