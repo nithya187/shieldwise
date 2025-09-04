@@ -468,38 +468,36 @@
               <p class="text-lg text-gray-600">Discover how insurance protects your future</p>
             </div>
           </div>
-          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-            <a href="https://shieldwise.app" target="_blank" rel="noopener" class="block w-full sm:w-auto px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold shadow hover:from-pink-500 hover:to-yellow-400 transition-colors duration-200 text-base text-center" style="word-break:break-all;">
-              🌐 https://shieldwise.app
-            </a>
-            <button id="restart-btn" class="hidden btn-primary w-full sm:w-auto">
-              Start Over
-            </button>
-          </div>
+          <button id="restart-btn" class="hidden btn-primary w-full sm:w-auto">
+            Start Over
+          </button>
         </div>
       </div>
-<style>
+</style>
   @media (max-width: 640px) {
     .main-card .flex.sm\:flex-row {
       flex-direction: column !important;
       gap: 1rem !important;
     }
-    .main-card .flex.flex-col.sm\:flex-row.items-start.sm\:items-center.gap-2.sm\:gap-4 {
-      flex-direction: column !important;
-      gap: 0.5rem !important;
-      width: 100%;
-    }
-    .main-card .flex.flex-col.sm\:flex-row.items-start.sm\:items-center.gap-2.sm\:gap-4 a,
-    .main-card .flex.flex-col.sm\:flex-row.items-start.sm\:items-center.gap-2.sm\:gap-4 button {
-      width: 100%;
-      justify-content: center;
-    }
     .main-card .flex.items-center.space-x-4 {
       flex-direction: row !important;
       gap: 0.75rem !important;
     }
+    .main-card .btn-primary {
+      width: 100% !important;
+      margin-top: 0.5rem;
+    }
+    .main-card h1.text-3xl {
+      font-size: 2rem !important;
+    }
+    .main-card p.text-lg {
+      font-size: 1rem !important;
+    }
+    .main-card {
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+    }
   }
-</style>
     </div>
 
     <!-- Progress Steps -->
